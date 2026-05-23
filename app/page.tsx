@@ -54,6 +54,72 @@ function IconPrinter(p: React.SVGProps<SVGSVGElement>) {
   );
 }
 
+const POUTINE_PORTIONS = [
+  {
+    size: "PETITE POUTINE:",
+    lines: ["3/4 CONTENANT DE FROMAGE", "3/4 LOUCHE DE SAUCE"],
+  },
+  {
+    size: "MOYENNE POUTINE:",
+    lines: [
+      "3/4 LOUCHE DE SAUCE",
+      "1 CONTENANT DE FROMAGE",
+      "3/4 LOUCHE DE SAUCE",
+    ],
+  },
+  {
+    size: "GRANDE POUTINE:",
+    lines: [
+      "2 LOUCHES DE SAUCE",
+      "1 1/2 CONTENANT DE FROMAGE",
+      "1 LOUCHE DE SAUCE",
+    ],
+  },
+  {
+    size: "FAMILIALE POUTINE:",
+    lines: [
+      "2 LOUCHES DE SAUCE",
+      "2 CONTENANTS DE FROMAGE",
+      "2 LOUCHES DE SAUCE",
+    ],
+  },
+  {
+    size: "BARIL POUTINE:",
+    lines: [
+      "1 CONTENANT DE FROMAGE ET 1 1/2",
+      "LOUCHE DE SAUCE AU CENTRE",
+      "1 1/2 CONTENANT DE FROMAGE ET 2",
+      "LOUCHES DE SAUCE SUR LE DESSUS",
+    ],
+  },
+];
+
+function PoutinePortions() {
+  return (
+    <section className="lc-poutine">
+      <header className="lc-poutine-head">
+        <span>L E S P O R T I O N S</span>
+        <h2>S A U C E E T F R O M A G E</h2>
+      </header>
+
+      <div className="lc-poutine-list">
+        {POUTINE_PORTIONS.map((portion) => (
+          <div className="lc-poutine-row" key={portion.size}>
+            <h3>{portion.size}</h3>
+            <div>
+              {portion.lines.map((line) => (
+                <p key={line}>{line}</p>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <strong className="lc-poutine-warning">SAUCE TOUJOURS BIEN MÉLANGÉE!</strong>
+    </section>
+  );
+}
+
 // ============================================================
 // LIVE CLOCK
 // ============================================================
@@ -353,6 +419,8 @@ function ListPage({ recipes, onOpen }: { recipes: ApiRecipe[]; onOpen: (id: stri
 // DETAIL PAGE
 // ============================================================
 function DetailPage({ recipe, onBack }: { recipe: ApiRecipe; onBack: () => void }) {
+  const isPoutine = recipe.category?.name?.toLowerCase().includes("poutine");
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [recipe._id]);
@@ -417,6 +485,8 @@ function DetailPage({ recipe, onBack }: { recipe: ApiRecipe; onBack: () => void 
             </div>
           )}
 
+          {isPoutine && <PoutinePortions />}
+
           <section className="lc-ingredients">
             <header className="lc-ing-head">
               <h2 className="lc-ing-title">Ingrédients</h2>
@@ -473,8 +543,24 @@ export default function Page() {
   }, []);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    let isMounted = true;
+
+    fetchRecipes()
+      .then((data) => {
+        if (!isMounted) return;
+        setRecipes(data);
+        setIsLoading(false);
+      })
+      .catch(() => {
+        if (!isMounted) return;
+        setHasError(true);
+        setIsLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const open = useCallback((id: string) => setView({ name: "detail", id }), []);
   const back = useCallback(() => setView({ name: "list" }), []);
